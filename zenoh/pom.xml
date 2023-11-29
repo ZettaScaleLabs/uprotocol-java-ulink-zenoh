@@ -17,11 +17,27 @@
   <name>zenoh</name>
 
   <dependencies>
+
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.11</version>
       <scope>test</scope>
     </dependency>
+
+    <!-- Zenoh Library -->
+    <dependency>
+      <groupId>io.zenoh</groupId>
+      <artifactId>zenoh-java</artifactId>
+      <version>0.11.0-dev</version>
+    </dependency>
+
+    <!-- uProtocol core API library -->
+    <dependency>
+      <groupId>org.eclipse.uprotocol</groupId>
+      <artifactId>uprotocol-java</artifactId>
+      <version>1.5.1-SNAPSHOT</version>
+    </dependency>
+
   </dependencies>
 </project>
