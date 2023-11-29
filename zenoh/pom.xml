@@ -28,7 +28,7 @@
     <!-- Zenoh Library -->
     <dependency>
       <groupId>io.zenoh</groupId>
-      <artifactId>zenoh-java</artifactId>
+      <artifactId>zenoh-java-jvm</artifactId>
       <version>0.11.0-dev</version>
     </dependency>
 

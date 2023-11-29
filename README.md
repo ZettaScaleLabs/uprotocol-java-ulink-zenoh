@@ -39,8 +39,8 @@ mvn package
 # Run
 
 ```shell
-mvn exec:java -Dexec.mainClass="org.eclipse.uprotocol.ulink.zenoh.App" -X -pl zenoh
+mvn exec:java -Dexec.mainClass="org.eclipse.uprotocol.ulink.zenoh.ULink" -X -pl zenoh
 # Another way: Go into the module
 cd zenoh
-mvn exec:java -Dexec.mainClass="org.eclipse.uprotocol.ulink.zenoh.App" -X
+mvn exec:java -Dexec.mainClass="org.eclipse.uprotocol.ulink.zenoh.ULink" -X
 ```
