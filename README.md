@@ -30,17 +30,11 @@ mvn install
 * Build uprotocol-java-ulink-zenoh
 
 ```shell
-# Build
-mvn compile
-# Package
-mvn package
+gradle build
 ```
 
 # Run
 
 ```shell
-mvn exec:java -Dexec.mainClass="org.eclipse.uprotocol.ulink.zenoh.ULink" -X -pl zenoh
-# Another way: Go into the module
-cd zenoh
-mvn exec:java -Dexec.mainClass="org.eclipse.uprotocol.ulink.zenoh.ULink" -X
+gradle run
 ```
