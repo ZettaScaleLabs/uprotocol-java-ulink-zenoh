@@ -11,4 +11,4 @@ plugins {
 }
 
 rootProject.name = "uprotocol-java-ulink-zenoh"
-include("app")
+include("lib")

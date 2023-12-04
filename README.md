@@ -33,8 +33,8 @@ mvn install
 gradle build
 ```
 
-# Run
+# Test
 
 ```shell
-gradle run
+gradle test -i
 ```
