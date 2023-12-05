@@ -25,12 +25,10 @@ import org.eclipse.uprotocol.transport.UListener;
 import org.eclipse.uprotocol.uri.validator.UriValidator;
 import org.eclipse.uprotocol.v1.*;
 import org.eclipse.uprotocol.validation.ValidationResult;
-
-import com.google.protobuf.ByteString;
-import com.google.protobuf.Int32Value;
-
 import org.eclipse.uprotocol.rpc.RpcClient;
 import org.eclipse.uprotocol.uri.serializer.LongUriSerializer;
+
+import com.google.protobuf.ByteString;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -83,7 +81,6 @@ public class ULink implements UTransport, RpcClient
 
     private void listener(UUri uri, Sample sample) {
         System.out.println("Receiving data..." + sample.getValue());
-        // TODO: Receiving data from Zenoh and call UListener
         for (Map.Entry<UUri, UListener> entry : mListeners.entrySet()) {
             if (entry.getKey().equals(uri)) {
                 ByteString mData = ByteString.copyFromUtf8(sample.getValue().toString());
@@ -91,10 +88,10 @@ public class ULink implements UTransport, RpcClient
                         .setValue(mData)
                         .setFormat(UPayloadFormat.UPAYLOAD_FORMAT_PROTOBUF)
                         .build();
+                // TODO: Get UAttributes with user attachment
                 entry.getValue().onReceive(uri, mPayload, null);
             }
         }
-        // TODO: Split UPayload and UAttributes
     }
 
     /**
@@ -116,7 +113,6 @@ public class ULink implements UTransport, RpcClient
         // TODO: Define a way to transform Uuri to Zenoh's key
         String zenoh_key = "zenoh" + LongUriSerializer.instance().serialize(uri);
         try {
-            // TODO: Handle the data with listener
             KeyExpr keyExpr = KeyExpr.tryFrom(zenoh_key);
             System.out.println("Subscribing data from " + keyExpr);
             m_session.declareSubscriber(keyExpr).with(sample -> listener(uri, sample)).res();

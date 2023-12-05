@@ -25,8 +25,7 @@ import com.google.protobuf.Any;
 import com.google.protobuf.Int32Value;
 
 class ULinkTest {
-    @Test void uLinkTest() {
-        System.out.println("----- This is uLinkTest -----");
+    @Test void testPublishAndListener() throws Exception {
         int testValue = 3;
         ULink classUnderTest = new ULink();
 
@@ -66,11 +65,7 @@ class ULinkTest {
         classUnderTest.send(mTopic, mPayload, attributes);
 
         // Sleep for receiving data
-        try {
-            Thread.sleep(1000);
-        } catch(Exception e) {
-            System.err.println("Sleeping error" + e);
-        }
+        Thread.sleep(1000);
 
         assertTrue(true);
     }
