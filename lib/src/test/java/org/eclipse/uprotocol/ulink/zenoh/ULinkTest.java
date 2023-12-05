@@ -27,6 +27,7 @@ import com.google.protobuf.Int32Value;
 class ULinkTest {
     @Test void uLinkTest() {
         System.out.println("----- This is uLinkTest -----");
+        int testValue = 3;
         ULink classUnderTest = new ULink();
 
         //UUri mTopic = UUri.newBuilder()
@@ -37,18 +38,26 @@ class ULinkTest {
             .setResource(UResource.newBuilder().setName("door").setInstance("front_left")).build();
 
         // Register the listener
-        final class MyListener implements UListener {
+        final class TestListener implements UListener {
             @Override
             public UStatus onReceive(UUri uri, UPayload payload, UAttributes attributes) {
                 assertEquals(uri, mTopic);
+                try {
+                    Any msg = Any.parseFrom(payload.getValue());
+                    Int32Value val = msg.unpack(Int32Value.class);
+                    System.out.println("The value is " + val.getValue());
+                    assertEquals(testValue, val.getValue());
+                } catch(Exception e) {
+                    System.err.println("Unable to parse the payload: " + e);
+                }
                 return UStatus.newBuilder().setCode(UCode.OK).build();
             }
         };
 
-        classUnderTest.registerListener(mTopic, new MyListener());
+        classUnderTest.registerListener(mTopic, new TestListener());
 
         // Publish data
-        Any mData = Any.pack(Int32Value.of(3));
+        Any mData = Any.pack(Int32Value.of(testValue));
         UPayload mPayload = UPayload.newBuilder()
                 .setValue(mData.toByteString())
                 .setFormat(UPayloadFormat.UPAYLOAD_FORMAT_PROTOBUF)
@@ -58,7 +67,7 @@ class ULinkTest {
 
         // Sleep for receiving data
         try {
-            Thread.sleep(5000);
+            Thread.sleep(1000);
         } catch(Exception e) {
             System.err.println("Sleeping error" + e);
         }

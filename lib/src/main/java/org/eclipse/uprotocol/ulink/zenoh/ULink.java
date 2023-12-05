@@ -18,20 +18,30 @@ import io.zenoh.Session;
 import io.zenoh.prelude.SampleKind;
 import io.zenoh.publication.CongestionControl;
 import io.zenoh.publication.Priority;
+import io.zenoh.sample.Sample;
 
 import org.eclipse.uprotocol.transport.UTransport;
 import org.eclipse.uprotocol.transport.UListener;
 import org.eclipse.uprotocol.uri.validator.UriValidator;
 import org.eclipse.uprotocol.v1.*;
 import org.eclipse.uprotocol.validation.ValidationResult;
+
+import com.google.protobuf.ByteString;
+import com.google.protobuf.Int32Value;
+
 import org.eclipse.uprotocol.rpc.RpcClient;
 import org.eclipse.uprotocol.uri.serializer.LongUriSerializer;
 
+import java.util.Map;
+import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 
 public class ULink implements UTransport, RpcClient
 {
     private Session m_session;
+    // TODO: Check whether we can have multiple UUri mapping to multiple UListener
+    private final Map<UUri, UListener> mListeners = new HashMap<>();
+
     /*
      * uLink constructor
      * 
@@ -71,9 +81,19 @@ public class ULink implements UTransport, RpcClient
         return UStatus.newBuilder().setCode(UCode.OK).build();
     }
 
-    private void listener() {
-        System.out.println("Receiving data...");
+    private void listener(UUri uri, Sample sample) {
+        System.out.println("Receiving data..." + sample.getValue());
         // TODO: Receiving data from Zenoh and call UListener
+        for (Map.Entry<UUri, UListener> entry : mListeners.entrySet()) {
+            if (entry.getKey().equals(uri)) {
+                ByteString mData = ByteString.copyFromUtf8(sample.getValue().toString());
+                UPayload mPayload = UPayload.newBuilder()
+                        .setValue(mData)
+                        .setFormat(UPayloadFormat.UPAYLOAD_FORMAT_PROTOBUF)
+                        .build();
+                entry.getValue().onReceive(uri, mPayload, null);
+            }
+        }
         // TODO: Split UPayload and UAttributes
     }
 
@@ -99,10 +119,21 @@ public class ULink implements UTransport, RpcClient
             // TODO: Handle the data with listener
             KeyExpr keyExpr = KeyExpr.tryFrom(zenoh_key);
             System.out.println("Subscribing data from " + keyExpr);
-            m_session.declareSubscriber(keyExpr).with(sample -> listener()).res();
+            m_session.declareSubscriber(keyExpr).with(sample -> listener(uri, sample)).res();
         } catch (Exception e) {
             System.err.println("Error while creating subscriber" + e.toString());
+            return UStatus.newBuilder().setCode(UCode.INTERNAL).build();
         }
+
+        // Register the UListener
+        if (mListeners.containsKey(uri)) {
+            return UStatus.newBuilder()
+                    .setCode(UCode.ALREADY_EXISTS)
+                    .setMessage("Listener already registered for " + uri)
+                    .build();
+        }
+        mListeners.put(uri, listener);
+
         return UStatus.newBuilder().setCode(UCode.OK).build();
     }
 
@@ -118,6 +149,7 @@ public class ULink implements UTransport, RpcClient
                     .setMessage(result.getMessage())
                     .build();
         }
+
         // TODO: Define a way to transform Uuri to Zenoh's key
         String zenoh_key = "zenoh" + LongUriSerializer.instance().serialize(uri);
         try {
@@ -132,7 +164,9 @@ public class ULink implements UTransport, RpcClient
                 .res();
         } catch (Exception e) {
             System.err.println("Error while publishing data" + e.toString());
+            return UStatus.newBuilder().setCode(UCode.INTERNAL).build();
         }
+
         return UStatus.newBuilder().setCode(UCode.OK).build();
     }
 
@@ -152,6 +186,16 @@ public class ULink implements UTransport, RpcClient
                     .setMessage(result.getMessage())
                     .build();
         }
+
+        // Unregister the UListener
+        if (!mListeners.containsKey(uri)) {
+            return UStatus.newBuilder()
+                    .setCode(UCode.INVALID_ARGUMENT)
+                    .setMessage("No listener found for " + uri)
+                    .build();
+        }
+        mListeners.remove(uri, listener);
+
         return UStatus.newBuilder().setCode(UCode.OK).build();
     }
 }
