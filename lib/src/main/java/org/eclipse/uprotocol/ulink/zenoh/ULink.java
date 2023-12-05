@@ -175,6 +175,7 @@ public class ULink implements UTransport, RpcClient
      */
     @Override
     public UStatus unregisterListener(UUri uri, UListener listener) {
+        // TODO: Why do we need the argument listener in unregister?
         ValidationResult result = UriValidator.validate(uri);
         if (result.isFailure()) {
             return UStatus.newBuilder()
@@ -190,7 +191,7 @@ public class ULink implements UTransport, RpcClient
                     .setMessage("No listener found for " + uri)
                     .build();
         }
-        mListeners.remove(uri, listener);
+        mListeners.remove(uri);
 
         return UStatus.newBuilder().setCode(UCode.OK).build();
     }

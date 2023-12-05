@@ -25,7 +25,38 @@ import com.google.protobuf.Any;
 import com.google.protobuf.Int32Value;
 
 class ULinkTest {
+    @Test void testRegisterAndUnregister() {
+        UStatus ustatus;
+        ULink classUnderTest = new ULink();
+
+        UUri mTopic = UUri.newBuilder()
+            .setEntity(UEntity.newBuilder().setName("body.access").setVersionMajor(1))
+            .setResource(UResource.newBuilder().setName("door").setInstance("front_left")).build();
+        final class dummyListener implements UListener {
+            @Override
+            public UStatus onReceive(UUri uri, UPayload payload, UAttributes attributes) {
+                // Do nothing
+                return UStatus.newBuilder().setCode(UCode.OK).build();
+            }
+        };
+
+        ustatus = classUnderTest.registerListener(mTopic, new dummyListener());
+        System.out.println("Registering the Listener...");
+        assertEquals(ustatus.getCode(), UCode.OK);
+
+        System.out.println("Unregistering the Listener...");
+        ustatus = classUnderTest.unregisterListener(mTopic, new dummyListener());
+        assertEquals(ustatus.getCode(), UCode.OK);
+
+        System.out.println("Unregistering the unexisting Listener...");
+        ustatus = classUnderTest.unregisterListener(mTopic, new dummyListener());
+        assertEquals(ustatus.getCode(), UCode.INVALID_ARGUMENT);
+
+        assertTrue(true);
+    }
+
     @Test void testPublishAndListener() throws Exception {
+        UStatus ustatus;
         int testValue = 3;
         ULink classUnderTest = new ULink();
 
@@ -53,7 +84,8 @@ class ULinkTest {
             }
         };
 
-        classUnderTest.registerListener(mTopic, new TestListener());
+        ustatus = classUnderTest.registerListener(mTopic, new TestListener());
+        assertEquals(ustatus.getCode(), UCode.OK);
 
         // Publish data
         Any mData = Any.pack(Int32Value.of(testValue));
@@ -62,7 +94,8 @@ class ULinkTest {
                 .setFormat(UPayloadFormat.UPAYLOAD_FORMAT_PROTOBUF)
                 .build();
         UAttributes attributes = UAttributesBuilder.publish(UPriority.UPRIORITY_CS4).build();
-        classUnderTest.send(mTopic, mPayload, attributes);
+        ustatus = classUnderTest.send(mTopic, mPayload, attributes);
+        assertEquals(ustatus.getCode(), UCode.OK);
 
         // Sleep for receiving data
         Thread.sleep(1000);
