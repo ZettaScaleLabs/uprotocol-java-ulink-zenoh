@@ -13,10 +13,11 @@
 //
 package org.eclipse.uprotocol.ulink.zenoh;
 
-import io.zenoh.exceptions.ZenohException;
 import io.zenoh.keyexpr.KeyExpr;
-import io.zenoh.publication.Publisher;
 import io.zenoh.Session;
+import io.zenoh.prelude.SampleKind;
+import io.zenoh.publication.CongestionControl;
+import io.zenoh.publication.Priority;
 
 import org.eclipse.uprotocol.transport.UTransport;
 import org.eclipse.uprotocol.transport.UListener;
@@ -24,12 +25,27 @@ import org.eclipse.uprotocol.uri.validator.UriValidator;
 import org.eclipse.uprotocol.v1.*;
 import org.eclipse.uprotocol.validation.ValidationResult;
 import org.eclipse.uprotocol.rpc.RpcClient;
+import org.eclipse.uprotocol.uri.serializer.LongUriSerializer;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 
 public class ULink implements UTransport, RpcClient
 {
+    private Session m_session;
+    /*
+     * uLink constructor
+     * 
+     * @param executor - the executor to run the listener callbacks on
+     */
+    public ULink() {
+        try {
+            System.out.println("Initialize the session");
+            m_session = Session.open();
+        } catch(Exception e) {
+            System.out.println("Failed to init the Zenoh session");
+        }
+    }
+
     /*
      * Send request and get completable future
      * 
@@ -40,6 +56,7 @@ public class ULink implements UTransport, RpcClient
      */
     @Override
     public CompletableFuture<UPayload> invokeMethod(UUri uri, UPayload payload, UAttributes attributes) {
+        // TODO: Send Zenoh's query
         return new CompletableFuture<UPayload>();
     }
 
@@ -50,7 +67,14 @@ public class ULink implements UTransport, RpcClient
      */
     @Override
     public UStatus authenticate(UEntity entity) {
+        // TODO: Need to check the authenticate mechanism
         return UStatus.newBuilder().setCode(UCode.OK).build();
+    }
+
+    private void listener() {
+        System.out.println("Receiving data...");
+        // TODO: Receiving data from Zenoh and call UListener
+        // TODO: Split UPayload and UAttributes
     }
 
     /**
@@ -62,6 +86,23 @@ public class ULink implements UTransport, RpcClient
      */
     @Override
     public UStatus registerListener(UUri uri, UListener listener) {
+        ValidationResult result = UriValidator.validate(uri);
+        if (result.isFailure()) {
+            return UStatus.newBuilder()
+                    .setCode(UCode.INVALID_ARGUMENT)
+                    .setMessage(result.getMessage())
+                    .build();
+        }
+        // TODO: Define a way to transform Uuri to Zenoh's key
+        String zenoh_key = "zenoh" + LongUriSerializer.instance().serialize(uri);
+        try {
+            // TODO: Handle the data with listener
+            KeyExpr keyExpr = KeyExpr.tryFrom(zenoh_key);
+            System.out.println("Subscribing data from " + keyExpr);
+            m_session.declareSubscriber(keyExpr).with(sample -> listener()).res();
+        } catch (Exception e) {
+            System.err.println("Error while creating subscriber" + e.toString());
+        }
         return UStatus.newBuilder().setCode(UCode.OK).build();
     }
 
@@ -70,6 +111,28 @@ public class ULink implements UTransport, RpcClient
      */
     @Override
     public UStatus send(UUri uri, UPayload payload, UAttributes attributes) {
+        ValidationResult result = UriValidator.validate(uri);
+        if (result.isFailure()) {
+            return UStatus.newBuilder()
+                    .setCode(UCode.INVALID_ARGUMENT)
+                    .setMessage(result.getMessage())
+                    .build();
+        }
+        // TODO: Define a way to transform Uuri to Zenoh's key
+        String zenoh_key = "zenoh" + LongUriSerializer.instance().serialize(uri);
+        try {
+            KeyExpr keyExpr = KeyExpr.tryFrom(zenoh_key);
+            // TODO: Need a way to send UAttributes (with user attachment)
+            String value = payload.getValue().toStringUtf8();
+            System.out.println("Putting Data to " + keyExpr + " with value " + value + "...");
+            m_session.put(keyExpr, value)
+                .congestionControl(CongestionControl.BLOCK)
+                .priority(Priority.REALTIME)
+                .kind(SampleKind.PUT)
+                .res();
+        } catch (Exception e) {
+            System.err.println("Error while publishing data" + e.toString());
+        }
         return UStatus.newBuilder().setCode(UCode.OK).build();
     }
 
@@ -82,6 +145,13 @@ public class ULink implements UTransport, RpcClient
      */
     @Override
     public UStatus unregisterListener(UUri uri, UListener listener) {
+        ValidationResult result = UriValidator.validate(uri);
+        if (result.isFailure()) {
+            return UStatus.newBuilder()
+                    .setCode(UCode.INVALID_ARGUMENT)
+                    .setMessage(result.getMessage())
+                    .build();
+        }
         return UStatus.newBuilder().setCode(UCode.OK).build();
     }
 }

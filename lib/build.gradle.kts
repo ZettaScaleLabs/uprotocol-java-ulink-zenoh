@@ -4,11 +4,12 @@
  * This generated file contains a sample Java application project to get you started.
  * For more details on building Java & JVM projects, please refer to https://docs.gradle.org/8.4/userguide/building_java_projects.html in the Gradle documentation.
  */
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.gradle.api.tasks.testing.logging.TestLogEvent
 
 plugins {
     // Apply the java-library plugin for API and implementation separation.
     `java-library`
-
 }
 
 repositories {
@@ -30,6 +31,8 @@ dependencies {
     implementation("io.zenoh:zenoh-java-jvm:0.11.0-dev")
     // uprotocol-java
     implementation("org.eclipse.uprotocol:uprotocol-java:1.5.4")
+    // protobuf
+    implementation("com.google.protobuf:protobuf-java")
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
@@ -42,4 +45,6 @@ java {
 tasks.named<Test>("test") {
     // Use JUnit Platform for unit tests.
     useJUnitPlatform()
+    // Show the test message
+    testLogging.showStandardStreams = true
 }

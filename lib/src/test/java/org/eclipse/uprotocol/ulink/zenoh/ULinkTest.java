@@ -16,10 +16,53 @@ package org.eclipse.uprotocol.ulink.zenoh;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
+import org.eclipse.uprotocol.v1.UUri;
+import org.eclipse.uprotocol.transport.builder.UAttributesBuilder;
+import org.eclipse.uprotocol.v1.*;
+import org.eclipse.uprotocol.transport.UListener;
+
+import com.google.protobuf.Any;
+import com.google.protobuf.Int32Value;
+
 class ULinkTest {
     @Test void uLinkTest() {
-        ULink classUnderTest = new ULink();
         System.out.println("----- This is uLinkTest -----");
+        ULink classUnderTest = new ULink();
+
+        //UUri mTopic = UUri.newBuilder()
+        //    .setEntity(UEntity.newBuilder().setName("body.access").setVersionMajor(1))
+        //    .setResource(UResource.newBuilder().setName("door").setInstance("front_left").setMessage("Door")).build();
+        UUri mTopic = UUri.newBuilder()
+            .setEntity(UEntity.newBuilder().setName("body.access").setVersionMajor(1))
+            .setResource(UResource.newBuilder().setName("door").setInstance("front_left")).build();
+
+        // Register the listener
+        final class MyListener implements UListener {
+            @Override
+            public UStatus onReceive(UUri uri, UPayload payload, UAttributes attributes) {
+                assertEquals(uri, mTopic);
+                return UStatus.newBuilder().setCode(UCode.OK).build();
+            }
+        };
+
+        classUnderTest.registerListener(mTopic, new MyListener());
+
+        // Publish data
+        Any mData = Any.pack(Int32Value.of(3));
+        UPayload mPayload = UPayload.newBuilder()
+                .setValue(mData.toByteString())
+                .setFormat(UPayloadFormat.UPAYLOAD_FORMAT_PROTOBUF)
+                .build();
+        UAttributes attributes = UAttributesBuilder.publish(UPriority.UPRIORITY_CS4).build();
+        classUnderTest.send(mTopic, mPayload, attributes);
+
+        // Sleep for receiving data
+        try {
+            Thread.sleep(5000);
+        } catch(Exception e) {
+            System.err.println("Sleeping error" + e);
+        }
+
         assertTrue(true);
     }
 }

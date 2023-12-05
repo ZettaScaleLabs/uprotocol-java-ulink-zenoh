@@ -20,7 +20,7 @@ gradle publishToMavenLocal
 
 ```shell
 # Get the code
-git clone https://github.com/eclipse-uprotocol/uprotocol-java.git -b ea94d1b
+git clone https://github.com/eclipse-uprotocol/uprotocol-java.git -b uprotocol-java-1.5.4
 cd uprotocol-java
 # Build and publish to Maven Local repository
 mvn compile
@@ -36,5 +36,8 @@ gradle build
 # Test
 
 ```shell
-gradle test -i
+# Run all the test
+gradle cleanTest test -i
+# Only run specific test
+gradle cleanTest test --tests org.eclipse.uprotocol.ulink.zenoh.ULinkTest
 ```
