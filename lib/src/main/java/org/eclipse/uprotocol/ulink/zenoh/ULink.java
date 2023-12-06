@@ -19,6 +19,9 @@ import io.zenoh.prelude.SampleKind;
 import io.zenoh.publication.CongestionControl;
 import io.zenoh.publication.Priority;
 import io.zenoh.sample.Sample;
+import io.zenoh.value.Value;
+import io.zenoh.prelude.Encoding;
+import io.zenoh.prelude.KnownEncoding;
 
 import org.eclipse.uprotocol.transport.UTransport;
 import org.eclipse.uprotocol.transport.UListener;
@@ -83,7 +86,7 @@ public class ULink implements UTransport, RpcClient
         System.out.println("Receiving data..." + sample.getValue());
         for (Map.Entry<UUri, UListener> entry : mListeners.entrySet()) {
             if (entry.getKey().equals(uri)) {
-                ByteString mData = ByteString.copyFromUtf8(sample.getValue().toString());
+                ByteString mData = ByteString.copyFrom(sample.getValue().getPayload());
                 UPayload mPayload = UPayload.newBuilder()
                         .setValue(mData)
                         .setFormat(UPayloadFormat.UPAYLOAD_FORMAT_PROTOBUF)
@@ -153,7 +156,7 @@ public class ULink implements UTransport, RpcClient
             // TODO: Need a way to send UAttributes (with user attachment)
             String value = payload.getValue().toStringUtf8();
             System.out.println("Putting Data to " + keyExpr + " with value " + value + "...");
-            m_session.put(keyExpr, value)
+            m_session.put(keyExpr, new Value(payload.getValue().toByteArray(), new Encoding(KnownEncoding.APP_OCTET_STREAM)))
                 .congestionControl(CongestionControl.BLOCK)
                 .priority(Priority.REALTIME)
                 .kind(SampleKind.PUT)
