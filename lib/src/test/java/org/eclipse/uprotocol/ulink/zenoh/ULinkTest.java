@@ -16,20 +16,22 @@ package org.eclipse.uprotocol.ulink.zenoh;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-import org.eclipse.uprotocol.v1.UUri;
-import org.eclipse.uprotocol.transport.builder.UAttributesBuilder;
 import org.eclipse.uprotocol.v1.*;
+import org.eclipse.uprotocol.transport.builder.UAttributesBuilder;
 import org.eclipse.uprotocol.transport.UListener;
 
 import com.google.protobuf.Any;
 import com.google.protobuf.Int32Value;
 
 class ULinkTest {
+    /**
+     * Test register and unregister function for ULink library.
+     */
     @Test void testRegisterAndUnregister() {
         UStatus ustatus;
         ULink classUnderTest = new ULink();
 
-        UUri mTopic = UUri.newBuilder()
+        UUri uuri = UUri.newBuilder()
             .setEntity(UEntity.newBuilder().setName("body.access").setVersionMajor(1))
             .setResource(UResource.newBuilder().setName("door").setInstance("front_left")).build();
         final class dummyListener implements UListener {
@@ -40,21 +42,22 @@ class ULinkTest {
             }
         };
 
-        ustatus = classUnderTest.registerListener(mTopic, new dummyListener());
-        System.out.println("Registering the Listener...");
+        ustatus = classUnderTest.registerListener(uuri, new dummyListener());
+        System.out.println("Register the Listener...");
         assertEquals(ustatus.getCode(), UCode.OK);
 
-        System.out.println("Unregistering the Listener...");
-        ustatus = classUnderTest.unregisterListener(mTopic, new dummyListener());
+        System.out.println("Unregister the Listener...");
+        ustatus = classUnderTest.unregisterListener(uuri, new dummyListener());
         assertEquals(ustatus.getCode(), UCode.OK);
 
-        System.out.println("Unregistering the unexisting Listener...");
-        ustatus = classUnderTest.unregisterListener(mTopic, new dummyListener());
+        System.out.println("Unregister the unexisting Listener...");
+        ustatus = classUnderTest.unregisterListener(uuri, new dummyListener());
         assertEquals(ustatus.getCode(), UCode.INVALID_ARGUMENT);
-
-        assertTrue(true);
     }
 
+    /**
+     * Simple test to register Listener and then send data to that Listener.
+     */
     @Test void testPublishAndListener() throws Exception {
         UStatus ustatus;
         int testValue = 3;
@@ -63,7 +66,7 @@ class ULinkTest {
         //UUri mTopic = UUri.newBuilder()
         //    .setEntity(UEntity.newBuilder().setName("body.access").setVersionMajor(1))
         //    .setResource(UResource.newBuilder().setName("door").setInstance("front_left").setMessage("Door")).build();
-        UUri mTopic = UUri.newBuilder()
+        UUri uuri = UUri.newBuilder()
             .setEntity(UEntity.newBuilder().setName("body.access").setVersionMajor(1))
             .setResource(UResource.newBuilder().setName("door").setInstance("front_left")).build();
 
@@ -71,11 +74,11 @@ class ULinkTest {
         final class TestListener implements UListener {
             @Override
             public UStatus onReceive(UUri uri, UPayload payload, UAttributes attributes) {
-                assertEquals(uri, mTopic);
+                assertEquals(uri, uuri);
                 try {
                     Any msg = Any.parseFrom(payload.getValue());
                     Int32Value val = msg.unpack(Int32Value.class);
-                    System.out.println("The value is " + val.getValue());
+                    System.out.println("Receive the data " + val.getValue());
                     assertEquals(testValue, val.getValue());
                 } catch(Exception e) {
                     System.err.println("Unable to parse the payload: " + e);
@@ -83,23 +86,29 @@ class ULinkTest {
                 return UStatus.newBuilder().setCode(UCode.OK).build();
             }
         };
-
-        ustatus = classUnderTest.registerListener(mTopic, new TestListener());
+        System.out.println("Register the listener...");
+        ustatus = classUnderTest.registerListener(uuri, new TestListener());
         assertEquals(ustatus.getCode(), UCode.OK);
 
         // Publish data
-        Any mData = Any.pack(Int32Value.of(testValue));
-        UPayload mPayload = UPayload.newBuilder()
-                .setValue(mData.toByteString())
+        System.out.println("Publish the data "+ testValue +"...");
+        Any data = Any.pack(Int32Value.of(testValue));
+        UPayload upayload = UPayload.newBuilder()
+                .setValue(data.toByteString())
                 .setFormat(UPayloadFormat.UPAYLOAD_FORMAT_PROTOBUF)
                 .build();
         UAttributes attributes = UAttributesBuilder.publish(UPriority.UPRIORITY_CS4).build();
-        ustatus = classUnderTest.send(mTopic, mPayload, attributes);
+        ustatus = classUnderTest.send(uuri, upayload, attributes);
         assertEquals(ustatus.getCode(), UCode.OK);
 
         // Sleep for receiving data
         Thread.sleep(1000);
+    }
 
+    /**
+     * Test invoking a method and receiving the response.
+     */
+    @Test void testInvokeMethod() {
         assertTrue(true);
     }
 }

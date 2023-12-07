@@ -50,10 +50,9 @@ public class ULink implements UTransport, RpcClient
      */
     public ULink() {
         try {
-            System.out.println("Initialize the session");
             m_session = Session.open();
         } catch(Exception e) {
-            System.out.println("Failed to init the Zenoh session");
+            System.err.println("Failed to init the Zenoh session");
         }
     }
 
@@ -79,11 +78,11 @@ public class ULink implements UTransport, RpcClient
     @Override
     public UStatus authenticate(UEntity entity) {
         // TODO: Need to check the authenticate mechanism
+        // https://github.com/eclipse-uprotocol/uprotocol-spec/blob/main/up-l1/README.adoc#21-authenticate
         return UStatus.newBuilder().setCode(UCode.OK).build();
     }
 
     private void listener(UUri uri, Sample sample) {
-        System.out.println("Receiving data..." + sample.getValue());
         for (Map.Entry<UUri, UListener> entry : mListeners.entrySet()) {
             if (entry.getKey().equals(uri)) {
                 ByteString mData = ByteString.copyFrom(sample.getValue().getPayload());
@@ -117,7 +116,6 @@ public class ULink implements UTransport, RpcClient
         String zenoh_key = "zenoh" + LongUriSerializer.instance().serialize(uri);
         try {
             KeyExpr keyExpr = KeyExpr.tryFrom(zenoh_key);
-            System.out.println("Subscribing data from " + keyExpr);
             m_session.declareSubscriber(keyExpr).with(sample -> listener(uri, sample)).res();
         } catch (Exception e) {
             System.err.println("Error while creating subscriber" + e.toString());
@@ -155,7 +153,6 @@ public class ULink implements UTransport, RpcClient
             KeyExpr keyExpr = KeyExpr.tryFrom(zenoh_key);
             // TODO: Need a way to send UAttributes (with user attachment)
             String value = payload.getValue().toStringUtf8();
-            System.out.println("Putting Data to " + keyExpr + " with value " + value + "...");
             m_session.put(keyExpr, new Value(payload.getValue().toByteArray(), new Encoding(KnownEncoding.APP_OCTET_STREAM)))
                 .congestionControl(CongestionControl.BLOCK)
                 .priority(Priority.REALTIME)
