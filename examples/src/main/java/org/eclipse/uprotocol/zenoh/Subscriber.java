@@ -19,7 +19,7 @@ public class Subscriber {
         // create uuri
         UUri uuri = UUri.newBuilder()
             .setEntity(UEntity.newBuilder().setName("body.access").setVersionMajor(1))
-            .setResource(UResource.newBuilder().setName("door").setInstance("front_left")).build();
+            .setResource(UResource.newBuilder().setName("door").setInstance("front_left").setMessage("Door")).build();
         String serialized_uuri = LongUriSerializer.instance().serialize(uuri);
         
         // Register the listener

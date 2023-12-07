@@ -112,8 +112,7 @@ public class ULink implements UTransport, RpcClient
                     .setMessage(result.getMessage())
                     .build();
         }
-        // TODO: Define a way to transform Uuri to Zenoh's key
-        String zenoh_key = "zenoh" + LongUriSerializer.instance().serialize(uri);
+        String zenoh_key = ToZenohKey(uri);
         try {
             KeyExpr keyExpr = KeyExpr.tryFrom(zenoh_key);
             m_session.declareSubscriber(keyExpr).with(sample -> listener(uri, sample)).res();
@@ -147,12 +146,10 @@ public class ULink implements UTransport, RpcClient
                     .build();
         }
 
-        // TODO: Define a way to transform Uuri to Zenoh's key
-        String zenoh_key = "zenoh" + LongUriSerializer.instance().serialize(uri);
+        String zenoh_key = ToZenohKey(uri);
         try {
             KeyExpr keyExpr = KeyExpr.tryFrom(zenoh_key);
             // TODO: Need a way to send UAttributes (with user attachment)
-            String value = payload.getValue().toStringUtf8();
             m_session.put(keyExpr, new Value(payload.getValue().toByteArray(), new Encoding(KnownEncoding.APP_OCTET_STREAM)))
                 .congestionControl(CongestionControl.BLOCK)
                 .priority(Priority.REALTIME)
@@ -194,5 +191,26 @@ public class ULink implements UTransport, RpcClient
         mListeners.remove(uri);
 
         return UStatus.newBuilder().setCode(UCode.OK).build();
+    }
+
+    /**
+     * Transform UURI to Zenoh key
+     */
+    private String ToZenohKey(UUri uri) {
+        // uProtocol Uri format: https://github.com/eclipse-uprotocol/uprotocol-spec/blob/6f0bb13356c0a377013bdd3342283152647efbf9/basics/uri.adoc#11-rfc3986
+        // up://<user@><device>.<domain><:port>/<ue_name>/<ue_version>/<resource|rpc.method><#message>
+        //            UAuthority               /        UEntity       /           UResource
+        String uri_str = LongUriSerializer.instance().serialize(uri);
+        String zenoh_key = "zenoh_uprotocol";
+        if (uri.hasAuthority()) {
+            zenoh_key += "/";
+        }
+        // TODO: Check whether these characters are all used in UUri.
+        zenoh_key += uri_str.replace("*", "\\8")
+                            .replace("$", "\\4")
+                            .replace("?", "\\0")
+                            .replace("#", "\\3")
+                            .replace("//", "\\/");
+        return zenoh_key;
     }
 }

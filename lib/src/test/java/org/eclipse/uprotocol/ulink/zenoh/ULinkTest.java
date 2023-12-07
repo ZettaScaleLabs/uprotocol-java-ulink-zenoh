@@ -63,12 +63,9 @@ class ULinkTest {
         int testValue = 3;
         ULink classUnderTest = new ULink();
 
-        //UUri mTopic = UUri.newBuilder()
-        //    .setEntity(UEntity.newBuilder().setName("body.access").setVersionMajor(1))
-        //    .setResource(UResource.newBuilder().setName("door").setInstance("front_left").setMessage("Door")).build();
         UUri uuri = UUri.newBuilder()
             .setEntity(UEntity.newBuilder().setName("body.access").setVersionMajor(1))
-            .setResource(UResource.newBuilder().setName("door").setInstance("front_left")).build();
+            .setResource(UResource.newBuilder().setName("door").setInstance("front_left").setMessage("Door")).build();
 
         // Register the listener
         final class TestListener implements UListener {
