@@ -41,3 +41,12 @@ gradle cleanTest test -i
 # Only run specific test
 gradle cleanTest test --tests org.eclipse.uprotocol.ulink.zenoh.ULinkTest
 ```
+
+# Run examples
+
+```shell
+# publish data
+gradle :examples:Publisher
+# subscribe data
+gradle :examples:Subscriber
+```
